@@ -11,6 +11,7 @@ import ErrorAlert from "../../Components/UI/ErrorAlert";
 import Button from "../../Components/UI/Button";
 
 const EventDetailPage = () => {
+  console.log("branch commit");
   const router = useRouter();
   const eventId = router.query.eventId as string;
   const event = getEventById(eventId);
