@@ -1,32 +1,36 @@
 import React, { Fragment } from "react";
-import { useRouter } from "next/router";
 
-import { getFilteredEvents } from "../../dummy-data";
+import { NextPage } from "next";
+import { GetServerSideProps } from "next";
+
 import EventList from "../../Components/Event/EventList";
 import ResultsTitle from "../../Components/Event/ResultTitle";
 import ErrorAlert from "../../Components/UI/ErrorAlert";
 import Button from "../../Components/UI/Button";
 
-const FilterEventsPage = () => {
-  const router = useRouter();
+import { Items } from "../../Interface";
 
-  const filterData = router.query.slug;
+import {
+  fetchEventsData,
+  transformData,
+  getFilteredEvents,
+} from "../../helper";
 
-  if (!filterData) {
-    return <p className="center">Loading</p>;
-  }
+interface FilterEventsPageProps {
+  hasError?: boolean;
+  events: Items[];
+  dates: {
+    year: number;
+    month: number;
+  };
+}
 
-  const filteredYear = +filterData[0];
-  const filteredMonth = +filterData[1];
-
-  if (
-    isNaN(filteredYear) ||
-    isNaN(filteredMonth) ||
-    filteredYear > 2030 ||
-    filteredYear < 2021 ||
-    filteredMonth < 1 ||
-    filteredMonth > 12
-  ) {
+const FilterEventsPage: NextPage<FilterEventsPageProps> = ({
+  hasError,
+  events,
+  dates,
+}) => {
+  if (hasError) {
     return (
       <Fragment>
         <ErrorAlert>
@@ -39,10 +43,7 @@ const FilterEventsPage = () => {
     );
   }
 
-  const filteredEvents = getFilteredEvents({
-    year: filteredYear,
-    month: filteredMonth,
-  });
+  const filteredEvents = events;
 
   if (!filteredEvents || filteredEvents.length === 0) {
     return (
@@ -57,7 +58,7 @@ const FilterEventsPage = () => {
     );
   }
 
-  const date = new Date(filteredYear, filteredMonth - 1);
+  const date = new Date(dates.year, dates.month - 1);
 
   return (
     <Fragment>
@@ -65,6 +66,51 @@ const FilterEventsPage = () => {
       <EventList items={filteredEvents} />
     </Fragment>
   );
+};
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const { params } = context;
+
+  const filterData = params?.slug as string[];
+
+  const filteredYear = +filterData[0];
+  const filteredMonth = +filterData[1];
+
+  if (
+    isNaN(filteredYear) ||
+    isNaN(filteredMonth) ||
+    filteredYear > 2030 ||
+    filteredYear < 2021 ||
+    filteredMonth < 1 ||
+    filteredMonth > 12
+  ) {
+    return {
+      props: {
+        hasError: true,
+      },
+    };
+  }
+
+  const data = await fetchEventsData(
+    "https://next-js-course-e9232-default-rtdb.firebaseio.com/events.json"
+  );
+
+  const events = transformData(data);
+
+  const filteredEvents = getFilteredEvents(events, {
+    year: filteredYear,
+    month: filteredMonth,
+  });
+
+  return {
+    props: {
+      events: filteredEvents,
+      dates: {
+        year: filteredYear,
+        month: filteredMonth,
+      },
+    },
+  };
 };
 
 export default FilterEventsPage;

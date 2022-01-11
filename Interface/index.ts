@@ -12,3 +12,17 @@ export interface DateFilter {
   year: number;
   month: number;
 }
+
+export interface EventsProps {
+  events: {
+    e1: Items;
+    e2: Items;
+    e3: Items;
+  };
+}
+
+export interface EventsChildProps {
+  e1: Items;
+  e2: Items;
+  e3: Items;
+}
